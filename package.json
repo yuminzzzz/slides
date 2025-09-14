@@ -11,9 +11,15 @@
     "export": "slidev export"
   },
   "dependencies": {
+    "@ktym4a/slidev-theme-ktym4a": "^0.3.2",
     "@slidev/cli": "^52.1.0",
+    "@slidev/theme-apple-basic": "^0.25.1",
+    "@slidev/theme-bricks": "^0.25.0",
     "@slidev/theme-default": "latest",
     "@slidev/theme-seriph": "latest",
+    "slidev-theme-academic": "^2.1.0",
+    "slidev-theme-dracula": "^0.2.0",
+    "slidev-theme-eloc": "^1.1.0",
     "vue": "^3.5.18"
   }
 }

@@ -1,5 +1,5 @@
 ---
-theme: seriph
+theme: "@ktym4a/slidev-theme-ktym4a"
 background: https://cover.sli.dev
 title: React Compiler 介紹
 info: |
@@ -14,7 +14,7 @@ mdc: true
 
 # React Compiler 介紹
 
-## 自動記憶化的技術
+## 自動記憶化的原理
 
 <div class="abs-br m-6 flex gap-2">
   <a href="https://react.dev/learn/react-compiler" target="_blank" alt="React Compiler Docs" title="React Compiler 官方文件"
@@ -215,43 +215,40 @@ module.exports = {
 ```tsx {*|2-3|*}
 // 編譯前
 function App({ user }) {
-  const greeting = `Hello, ${user.name}!`;
   const avatar = user.avatar || "/default.png";
 
   return (
     <div>
-      {greeting} <img src={avatar} />
+      <img src={avatar} />
+      <p>{user.name}</user>
     </div>
   );
 }
 ```
 
-```tsx {*|2-3|*}
-// 編譯後（簡化版）
-function App({ user }) {
-  const t0 = useMemo(() => `Hello, ${user.name}!`, [user.name]);
-  const t1 = useMemo(() => user.avatar || "/default.png", [user.avatar]);
-  const t2 = useMemo(
-    () => (
+```tsx {*|2-3|*} {maxHeight:'250px'}
+// 編譯後
+import { c as _c } from "react/compiler-runtime";
+function App(t0) {
+  const $ = _c(2);
+  const { user } = t0;
+  const avatar = user.avatar || "/default.png";
+  let t1;
+  if ($[0] !== avatar) {
+    t1 = (
       <div>
-        {t0} <img src={t1} />
+        <img src={avatar} />
       </div>
-    ),
-    [t0, t1]
-  );
-
-  return t2;
+    );
+    $[0] = avatar;
+    $[1] = t1;
+  } else {
+    t1 = $[1];
+  }
+  return t1;
 }
 ```
 ````
-
-<v-click>
-
-<div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-  <strong>重點</strong>：編譯器自動插入 <code>useMemo</code> 並正確追蹤依賴關係
-</div>
-
-</v-click>
 
 <!--
 這個 magic-move 效果可以清楚展示編譯前後的差異
@@ -260,28 +257,17 @@ function App({ user }) {
 
 ---
 
-## layout: center
-
 # Live Demo 時間！ 🚀
-
-## 購物清單應用效能改善展示
-
-<div class="text-center mt-8">
-  <div class="inline-block p-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg">
-    準備展示嚴重拖垮畫面的例子...
-  </div>
-</div>
 
 <!--
 這裡是 Live Demo 時間
-準備展示購物清單應用的效能問題和改善
 -->
 
 ---
 
 # 效能問題範例
 
-```tsx {all|4-6|8-9|11|all} {maxHeight:'400px'}
+```tsx {all|4-6|8-9|11|all}
 function ShoppingApp() {
   const [items, setItems] = useState(LARGE_ITEM_LIST); // 1000+ 項目
   const [filter, setFilter] = useState("");
@@ -310,14 +296,6 @@ function ShoppingApp() {
 }
 ```
 
-<v-clicks>
-
-- 🐌 每次打字都重新過濾 1000+ 項目
-- 🐌 重複計算昂貴商品總價
-- 🐌 所有 ItemCard 都重新渲染
-
-</v-clicks>
-
 <!--
 這是一個典型的效能問題例子
 每次輸入都會觸發大量重新計算
@@ -327,7 +305,7 @@ function ShoppingApp() {
 
 # 啟用 React Compiler 後
 
-<div class="grid grid-cols-2 gap-6">
+<div class="grid grid-cols-1 gap-6">
 
 <div>
 
@@ -345,19 +323,6 @@ function ShoppingApp() {
 </div>
 
 <div>
-
-## 效能改善指標
-
-<v-click>
-
-| 指標        | 改善幅度 |
-| ----------- | -------- |
-| 輸入延遲    | 80% ⬇️   |
-| Render 時間 | 60% ⬇️   |
-| 記憶體使用  | 穩定     |
-| Bundle Size | +5KB     |
-
-</v-click>
 
 </div>
 
@@ -433,22 +398,17 @@ function UserProfile({ user, showDetails }) {
 
 <v-clicks>
 
-**方法 1：查看編譯後程式碼**
-
-- 檢查是否出現 `useMemo` 調用
-- 尋找自動插入的依賴陣列
-
-**方法 2：開發工具註解**
+**方法 1：console.log**
 
 ```tsx
 function MyComponent() {
-  // react-compiler: optimized
+  console.log("trigger");
   const result = expensiveCalculation();
   return <div>{result}</div>;
 }
 ```
 
-**方法 3：React DevTools Profiler**
+**方法 2：React DevTools Profiler**
 
 - 對比 re-render 次數變化
 - 觀察 render 時間改善
@@ -481,14 +441,6 @@ function MyComponent() {
 
 </div>
 
-<v-click>
-
-<div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border-l-4 border-yellow-500">
-  <strong>除錯檢查清單</strong>：Babel 配置順序 → React Rules 檢查 → 移除衝突記憶化 → 更新 ESLint
-</div>
-
-</v-click>
-
 <!--
 提供實用的除錯技巧
 幫助開發者解決實際遇到的問題
@@ -504,7 +456,15 @@ function MyComponent() {
 - **ESLint 更新**：安裝並配置 `eslint-plugin-react-compiler`
 
 ```bash
+npm install -D babel-plugin-react-compiler@rc
 npm install -D eslint-plugin-react-compiler
+npx react-compiler-healthcheck@latest
+```
+
+- **react 19 以前的版本**：需要另外安裝
+
+```bash
+npm i react-compiler-runtime@19.0.0-beta-63e3235-20250105
 ```
 
 ```javascript
@@ -689,73 +649,6 @@ function MyComponent() {
 
 ---
 
-# 效能監控與評估
-
-<div class="grid grid-cols-2 gap-6">
-
-<div>
-
-## 關鍵監控指標
-
-<v-clicks>
-
-- **組件平均 render 時間**
-- **重複 render 次數減少比例**
-- **Bundle size 變化**
-- **記憶體使用情況**
-- **用戶互動響應時間**
-
-</v-clicks>
-
-```javascript {4-8}
-// 效能監控設定
-const observer = new PerformanceObserver((list) => {
-  for (const entry of list.getEntries()) {
-    if (entry.name.startsWith("React")) {
-      console.log(`${entry.name}: ${entry.duration}ms`);
-    }
-  }
-});
-observer.observe({ entryTypes: ["measure"] });
-```
-
-</div>
-
-<div>
-
-## 成本效益分析
-
-<v-click>
-
-| 項目        | 影響        |
-| ----------- | ----------- |
-| Bundle Size | +5-10KB     |
-| 開發效率    | ⬆️ 大幅提升 |
-| 執行效能    | ⬆️ 顯著改善 |
-| 維護成本    | ⬇️ 降低     |
-| 學習成本    | ⬇️ 極低     |
-
-</v-click>
-
-<v-click>
-
-<div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-  <strong>結論</strong>：輕微的 bundle size 增加換取巨大的開發和執行效能提升
-</div>
-
-</v-click>
-
-</div>
-
-</div>
-
-<!--
-展示如何監控導入效果
-提供成本效益分析幫助決策
--->
-
----
-
 # Q&A 時間 🙋‍♂️
 
 準備好常見問題的解答了！
@@ -764,23 +657,11 @@ observer.observe({ entryTypes: ["measure"] });
 
 # 常見問題 FAQ
 
-<div class="grid grid-cols-2 gap-6">
+<div class="grid grid-cols-2 gap-8">
 
 <div>
 
-## Q1: 效能提升有多大？
-
-<v-click>
-
-**A:** 根據 Meta 內部數據：
-
-- 組件 re-render 減少 30-60%
-- 複雜應用 FCP 提升 10-25%
-- 具體效果取決於記憶化需求程度
-
-</v-click>
-
-## Q2: 學習成本如何？
+## Q1: 學習成本如何？
 
 <v-click>
 
@@ -796,7 +677,7 @@ observer.observe({ entryTypes: ["measure"] });
 
 <div>
 
-## Q3: 會有副作用嗎？
+## Q2: 會有副作用嗎？
 
 <v-click>
 
@@ -808,7 +689,11 @@ observer.observe({ entryTypes: ["measure"] });
 
 </v-click>
 
-## Q4: TypeScript 支援？
+</div>
+
+<div>
+
+## Q3: TypeScript 支援？
 
 <v-click>
 
@@ -839,29 +724,21 @@ observer.observe({ entryTypes: ["measure"] });
 
 ## 📚 官方資源
 
-<v-clicks>
-
 - [React Compiler 官方文件](https://react.dev/learn/react-compiler)
 - [Compiler Playground](https://playground.react.dev/)
 - [GitHub Repository](https://github.com/facebook/react/tree/main/compiler)
-- [Meta Engineering Blog](https://engineering.fb.com)
-
-</v-clicks>
+- [Blog](https://github.com/reactwg/react-compiler/discussions)
 
 </div>
 
 <div>
 
-## 🛠️ 實用工具
+## 📚 學習資源
 
-<v-clicks>
-
-- `eslint-plugin-react-compiler`
-- React DevTools Profiler
-- Webpack Bundle Analyzer
-- Performance Observer API
-
-</v-clicks>
+- [How React Compiler Performs on Real Code](https://www.developerway.com/posts/how-react-compiler-performs-on-real-code)
+- [React Compiler Design Goals](https://github.com/facebook/react/blob/main/compiler/docs/DESIGN_GOALS.md)
+- [React Compiler internals](https://www.youtube.com/watch?v=Pw8w2O5Y0no)
+- [React Compiler Deep Dive](https://www.youtube.com/watch?v=uA_PVyZP7AI)
 
 </div>
 
