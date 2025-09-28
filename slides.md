@@ -1,5 +1,7 @@
 ---
-theme: "@ktym4a/slidev-theme-ktym4a"
+theme: "seriph"
+themeConfig:
+  primary: "#5d8392"
 background: https://cover.sli.dev
 title: React Compiler 介紹
 info: |
